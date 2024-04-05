@@ -62,7 +62,7 @@ def add_transparent_image(background, foreground, x_offset=None, y_offset=None):
 # cv2.namedWindow("StarWars Face Recognation")
 
 # #Loading vader_mask asset
-vader_mask = cv2.imread('/Users/johannes/GIT/StarWarsDay_2024/python/images/Chewbacca.png', cv2.IMREAD_UNCHANGED)
+# vader_mask = cv2.imread('/Users/johannes/GIT/StarWarsDay_2024/python/images/Chewbacca.png', cv2.IMREAD_UNCHANGED)
 
 # if webcam.isOpened(): # try to get the first frame
 #     rval, frame = webcam.read()
