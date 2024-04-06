@@ -5,26 +5,16 @@ from streamlit_webrtc import webrtc_streamer
 import av
 import urllib.request
 
+
 def load_image_from_URL(url: str):
     req = urllib.request.urlopen(url)
     encoded = np.asarray(bytearray(req.read()), dtype="uint8")
     image_bgra = cv2.imdecode(encoded, cv2.IMREAD_UNCHANGED)
     return image_bgra
 
-DOWNSCALE = 3
-UPSCALE_PNG = 1.2
-
-faceData = cv2.CascadeClassifier(
-    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-)
-
-st.title("Star Wars Day 2024")
-
-scale_factor = st.slider("PNG scale factor", min_value=0.1, max_value=5.0)
-st.text(f"Slider value is {scale_factor}")
-
-# https://stackoverflow.com/questions/40895785/using-opencv-to-overlay-transparent-image-onto-another-image
 def add_transparent_image(background, foreground, x_offset=None, y_offset=None):
+    # https://stackoverflow.com/questions/40895785/using-opencv-to-overlay-transparent-image-onto-another-image
+
     bg_h, bg_w, bg_channels = background.shape
     fg_h, fg_w, fg_channels = foreground.shape
 
@@ -62,26 +52,29 @@ def add_transparent_image(background, foreground, x_offset=None, y_offset=None):
     background[bg_y:bg_y + h, bg_x:bg_x + w] = composite
     return background
 
-# #Loading vader_mask asset
-vader_mask = load_image_from_URL("https://www.pngall.com/wp-content/uploads/9/Darth-Vader-Mask-PNG-High-Quality-Image.png")
-
-
 def video_frame_callback(frame):
     img = frame.to_ndarray(format="bgr24")
-    # img = cv2.cvtColor(cv2.Canny(img, 100, 200), cv2.COLOR_GRAY2BGR)
-    minisize = (int(img.shape[1]/DOWNSCALE),int(img.shape[0]/DOWNSCALE))
-    miniframe = cv2.resize(img, minisize)
-    faces = faceData.detectMultiScale(miniframe)
+    faces = faceData.detectMultiScale(img)
+    
+    if selected_mask == "Darth Vader":
+        mask = vader_mask
+    elif selected_mask == "Chewbacca":
+        mask = chewbacca_mak
+    elif selected_mask == "Storm Trooper":
+        mask = storm_trooper_mask
+    else:
+        mask = None
 
-    for face in faces:
-        x, y, w, h = [v * DOWNSCALE for v in face]
+    for (x, y, w, h) in faces:
         # img = cv2.rectangle(img, (x,y), (x+w, y+h),(255,0,0), 3)
 
-        x, y, w, h = [v * DOWNSCALE for v in face]
-
         # resize vade mask to a new var called small_vader_mask
-        small_vader_mask = cv2.resize(vader_mask, (int(UPSCALE_PNG*w), int(UPSCALE_PNG*h)))
-        add_transparent_image(img, small_vader_mask, max(0, x-int(abs(UPSCALE_PNG-1)/2*w)), max(0,y-int(abs(UPSCALE_PNG-1)/2*h)))
+        small_mask = cv2.resize(mask, (int(mask_scale_factor*w), int(mask_scale_factor*h)))
+        add_transparent_image(
+            img, 
+            small_mask, 
+            max(0, x-int(abs(mask_scale_factor-1)/2*w)), 
+            max(0,y-int(abs(mask_scale_factor-1)/2*h)))
 
     # rebuild a VideoFrame, preserving timing information
     new_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
@@ -89,15 +82,37 @@ def video_frame_callback(frame):
     new_frame.time_base = frame.time_base
     return new_frame
 
+faceData = cv2.CascadeClassifier(
+    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+)
+
+## CONSTANTS ------
+
+# #Loading vader_mask asset
+vader_mask = load_image_from_URL("https://www.pngall.com/wp-content/uploads/9/Darth-Vader-Mask-PNG-High-Quality-Image.png")
+chewbacca_mak = load_image_from_URL("https://www.pngall.com/wp-content/uploads/9/Chewbacca-Face-PNG-Clipart.png")
+storm_trooper_mask = load_image_from_URL("https://www.pngall.com/wp-content/uploads/13/Stormtrooper-Imperial-PNG-Photo.png")
+# x_wing = load_image_from_URL("https://www.pngall.com/de/star-wars/download/927")
+# millenium_falcon = load_image_from_URL("https://www.pngall.com/de/star-wars/download/928")
+
+## UI -----
+st.title("Star Wars Day 2024")
+
 webrtc_streamer(
     key="StarWarsDay_2024",
     media_stream_constraints={
         "video": True,
         "audio": False
     },
-    # video_processor_factory=VideoProcessor,
     rtc_configuration={ 
         "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
     },
     video_frame_callback=video_frame_callback
     )
+
+
+selected_mask = st.selectbox("Mask", ("Darth Vader", "Chewbacca", "Storm Trooper"))
+
+mask_scale_factor = st.slider("Mask scale factor", min_value=0.7, max_value=2.0)
+mask_x_offset = st.slider("Mask x-offset (left/right)", min_value=-50, max_value=50)
+mask_y_offset = st.slider("Mask y-offset (top/down)", min_value=-50, max_value=50)
