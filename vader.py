@@ -92,31 +92,46 @@ def add_transparent_image(background, foreground, x_offset=None, y_offset=None):
 #     if key in [27, ord('Q'), ord('q')]: # exit on ESC
 #         cv2.destroyWindow("Webcam Face Tracking")
 #         break
-def video_frame_callback(frame):
-    img = frame.to_ndarray(format="bgr24")
-    # img = cv2.cvtColor(cv2.Canny(img, 100, 200), cv2.COLOR_GRAY2BGR)
-    minisize = (int(img.shape[1]/DOWNSCALE),int(img.shape[0]/DOWNSCALE))
-    miniframe = cv2.resize(img, minisize)
-    faces = faceData.detectMultiScale(miniframe)
 
-    for face in faces:
-        print("FACE")
-        x, y, w, h = [v * DOWNSCALE for v in face]
-        img = cv2.rectangle(img, (x,y), (x+w, y+h),(255,0,0), 3)
+class VideoProcessor:
+    def __init__(self) -> None:
+        self.threshold1 = 100
+        self.threshold2 = 200
 
-    # rebuild a VideoFrame, preserving timing information
-    new_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
-    new_frame.pts = frame.pts
-    new_frame.time_base = frame.time_base
-    return new_frame
+    def recv(self, frame):
+        # img = frame.to_ndarray(format="bgr24")
 
-webrtc_streamer(key="StarWarsDay_2024",
-                media_stream_constraints={
-                    "video": True,
-                    "audio": False
-    },
+        # img = cv2.cvtColor(cv2.Canny(img, self.threshold1, self.threshold2), cv2.COLOR_GRAY2BGR)
+
+        # return av.VideoFrame.from_ndarray(img, format="bgr24")
+
+# def video_frame_callback(frame):
+        img = frame.to_ndarray(format="bgr24")
+        # img = cv2.cvtColor(cv2.Canny(img, 100, 200), cv2.COLOR_GRAY2BGR)
+        minisize = (int(img.shape[1]/DOWNSCALE),int(img.shape[0]/DOWNSCALE))
+        miniframe = cv2.resize(img, minisize)
+        faces = faceData.detectMultiScale(miniframe)
+
+        for face in faces:
+            print("FACE")
+            x, y, w, h = [v * DOWNSCALE for v in face]
+            img = cv2.rectangle(img, (x,y), (x+w, y+h),(255,0,0), 3)
+
+        # rebuild a VideoFrame, preserving timing information
+        new_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
+        new_frame.pts = frame.pts
+        new_frame.time_base = frame.time_base
+        return new_frame
+
+webrtc_streamer(
+    key="StarWarsDay_2024",
+    # media_stream_constraints={
+    #     "video": True,
+    #     "audio": False
+    # },
+    video_processor_factory=VideoProcessor,
     rtc_configuration={  # Add this line
         "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-    },
-    video_frame_callback=video_frame_callback
+    }
+    # video_frame_callback=video_frame_callback
     )
