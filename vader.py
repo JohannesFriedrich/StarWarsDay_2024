@@ -115,4 +115,8 @@ webrtc_streamer(key="StarWarsDay_2024",
                     "video": True,
                     "audio": False
     },
-    video_frame_callback=video_frame_callback)
+    rtc_configuration={  # Add this line
+        "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+    },
+    video_frame_callback=video_frame_callback
+    )
