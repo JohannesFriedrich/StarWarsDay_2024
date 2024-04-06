@@ -3,14 +3,20 @@ import numpy as np
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer
 import av
+import urllib.request
+
+def load_image_from_URL(url: str):
+    req = urllib.request.urlopen(url)
+    encoded = np.asarray(bytearray(req.read()), dtype="uint8")
+    image_bgra = cv2.imdecode(encoded, cv2.IMREAD_UNCHANGED)
+    return image_bgra
 
 DOWNSCALE = 3
-# UPSCALE_PNG = 1.2
+UPSCALE_PNG = 1.2
 
 faceData = cv2.CascadeClassifier(
     cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 )
-
 
 st.title("Star Wars Day 2024")
 
@@ -54,51 +60,10 @@ def add_transparent_image(background, foreground, x_offset=None, y_offset=None):
 
     # overwrite the section of the background image that has been updated
     background[bg_y:bg_y + h, bg_x:bg_x + w] = composite
-
-
-
-# # #OpenCV boiler plate
-# webcam = cv2.VideoCapture(0)
-# cv2.namedWindow("StarWars Face Recognation")
+    return background
 
 # #Loading vader_mask asset
-# vader_mask = cv2.imread('/Users/johannes/GIT/StarWarsDay_2024/python/images/Chewbacca.png', cv2.IMREAD_UNCHANGED)
-
-# if webcam.isOpened(): # try to get the first frame
-#     rval, frame = webcam.read()
-# else:
-#     rval = False
-
-# #Main loop
-# while rval:
-#     # detect eyes and draw glasses
-#     minisize = (int(frame.shape[1]/DOWNSCALE),int(frame.shape[0]/DOWNSCALE))
-#     miniframe = cv2.resize(frame, minisize)
-#     faces = faceData.detectMultiScale(miniframe)
-
-#     for face in faces:
-#         x, y, w, h = [v * DOWNSCALE for v in face]
-
-#         # resize vade mask to a new var called small_vader_mask
-#         small_vader_mask = cv2.resize(vader_mask, (int(UPSCALE_PNG*w), int(UPSCALE_PNG*h)))
-#         add_transparent_image(frame, small_vader_mask, max(0, x-int(abs(UPSCALE_PNG-1)/2*w)), max(0,y-int(abs(UPSCALE_PNG-1)/2*h)))
-
-#     cv2.imshow("Webcam Glasses Tracking", frame)
-
-#     # get next frame
-#     rval, frame = webcam.read()
-
-#     key = cv2.waitKey(20)
-#     if key in [27, ord('Q'), ord('q')]: # exit on ESC
-#         cv2.destroyWindow("Webcam Face Tracking")
-#         break
-
-# class VideoProcessor:
-#     def __init__(self) -> None:
-#         self.threshold1 = 100
-#         self.threshold2 = 200
-
-#     def recv(self, frame):
+vader_mask = load_image_from_URL("https://www.pngall.com/wp-content/uploads/9/Darth-Vader-Mask-PNG-High-Quality-Image.png")
 
 
 def video_frame_callback(frame):
@@ -109,9 +74,14 @@ def video_frame_callback(frame):
     faces = faceData.detectMultiScale(miniframe)
 
     for face in faces:
-        print("FACE")
         x, y, w, h = [v * DOWNSCALE for v in face]
-        img = cv2.rectangle(img, (x,y), (x+w, y+h),(255,0,0), 3)
+        # img = cv2.rectangle(img, (x,y), (x+w, y+h),(255,0,0), 3)
+
+        x, y, w, h = [v * DOWNSCALE for v in face]
+
+        # resize vade mask to a new var called small_vader_mask
+        small_vader_mask = cv2.resize(vader_mask, (int(UPSCALE_PNG*w), int(UPSCALE_PNG*h)))
+        add_transparent_image(img, small_vader_mask, max(0, x-int(abs(UPSCALE_PNG-1)/2*w)), max(0,y-int(abs(UPSCALE_PNG-1)/2*h)))
 
     # rebuild a VideoFrame, preserving timing information
     new_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
