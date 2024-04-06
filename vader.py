@@ -57,24 +57,40 @@ def video_frame_callback(frame):
     faces = faceData.detectMultiScale(img)
     
     if selected_mask == "Darth Vader":
-        mask = vader_mask
+        choosen_mask = vader_mask
     elif selected_mask == "Chewbacca":
-        mask = chewbacca_mak
+        choosen_mask = chewbacca_mask
     elif selected_mask == "Storm Trooper":
-        mask = storm_trooper_mask
+        choosen_mask = storm_trooper_mask
+    elif selected_mask == "Yoda":
+        choosen_mask = yoda_mask
+    elif selected_mask == "Mandalorian":
+        choosen_mask = mandalorian_mask
     else:
-        mask = None
+        return frame
+    if (choosen_mask != last_mask):
+        mask = load_image_from_URL(choosen_mask)
 
     for (x, y, w, h) in faces:
-        # img = cv2.rectangle(img, (x,y), (x+w, y+h),(255,0,0), 3)
-
         # resize vade mask to a new var called small_vader_mask
         small_mask = cv2.resize(mask, (int(mask_scale_factor*w), int(mask_scale_factor*h)))
         add_transparent_image(
             img, 
             small_mask, 
             max(0, x-int(abs(mask_scale_factor-1)/2*w)), 
-            max(0,y-int(abs(mask_scale_factor-1)/2*h)))
+            max(0,y-int(abs(mask_scale_factor-1)/2*h))
+        )
+        if x_wing:
+            add_transparent_image(
+                img, 
+                x_wing_mask
+            )
+        if millenium_falcon:
+            add_transparent_image(
+                img, 
+                millenium_falcon_mask
+            )    
+
 
     # rebuild a VideoFrame, preserving timing information
     new_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
@@ -86,14 +102,21 @@ faceData = cv2.CascadeClassifier(
     cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 )
 
-## CONSTANTS ------
+## CONSTANTS -----
+
+last_mask = None
+
 
 # #Loading vader_mask asset
-vader_mask = load_image_from_URL("https://www.pngall.com/wp-content/uploads/9/Darth-Vader-Mask-PNG-High-Quality-Image.png")
-chewbacca_mak = load_image_from_URL("https://www.pngall.com/wp-content/uploads/9/Chewbacca-Face-PNG-Clipart.png")
-storm_trooper_mask = load_image_from_URL("https://www.pngall.com/wp-content/uploads/13/Stormtrooper-Imperial-PNG-Photo.png")
-# x_wing = load_image_from_URL("https://www.pngall.com/de/star-wars/download/927")
-# millenium_falcon = load_image_from_URL("https://www.pngall.com/de/star-wars/download/928")
+vader_mask = "https://www.pngall.com/wp-content/uploads/9/Darth-Vader-Mask-PNG-High-Quality-Image.png"
+chewbacca_mask = "https://www.pngall.com/wp-content/uploads/9/Chewbacca-Face-PNG-Clipart.png"
+storm_trooper_mask = "https://www.pngall.com/wp-content/uploads/13/Stormtrooper-Imperial-PNG-Photo.png"
+x_wing_mask = load_image_from_URL("https://www.pngall.com/wp-content/uploads/2016/03/Star-Wars-Ship-PNG.png")
+millenium_falcon_mask = load_image_from_URL("https://www.pngall.com/wp-content/uploads/2016/03/Star-Wars-Ship-Vector-PNG.png")
+# https://www.pngall.com/wp-content/uploads/9/Princess-Leia-PNG-Image-HD.png
+# boba_fett_mask =  "https://banner2.cleanpng.com/20190921/zoj/transparent-boba-fett-helmet-fictional-character-personal-prot-5d86b29c6f95e6.6870234615691086364571.jpg"
+yoda_mask = "https://pngimg.com/d/yoda_PNG60.png"
+mandalorian_mask = "https://pngimg.com/uploads/mandalorian/mandalorian_PNG19.png"
 
 ## UI -----
 st.title("Star Wars Day 2024")
@@ -110,9 +133,11 @@ webrtc_streamer(
     video_frame_callback=video_frame_callback
     )
 
+st.sidebar.header("StarWars Day 2024")
+selected_mask     = st.sidebar.radio("Mask", ("None", "Darth Vader", "Chewbacca", "Storm Trooper", "Yoda", "Mandalorian"),index = 0)
+mask_scale_factor = st.sidebar.slider("Mask scale factor", min_value=0.7, max_value=2.0,  value=1.0)
+mask_x_offset     = st.sidebar.slider("Mask x-offset (left/right)", min_value=-50, max_value=50, value=0)
+mask_y_offset     = st.sidebar.slider("Mask y-offset (top/down)", min_value=-50, max_value=50, value=0)
+x_wing            = st.sidebar.checkbox("Add X-Wing")
+millenium_falcon  = st.sidebar.checkbox("Millenium Falcon")
 
-selected_mask = st.selectbox("Mask", ("Darth Vader", "Chewbacca", "Storm Trooper"))
-
-mask_scale_factor = st.slider("Mask scale factor", min_value=0.7, max_value=2.0)
-mask_x_offset = st.slider("Mask x-offset (left/right)", min_value=-50, max_value=50)
-mask_y_offset = st.slider("Mask y-offset (top/down)", min_value=-50, max_value=50)
