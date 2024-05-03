@@ -53,12 +53,12 @@ def add_transparent_image(background, foreground, x_offset=None, y_offset=None):
     return background
 
 def video_frame_callback(frame):
-    img = frame.to_ndarray(format="bgr24")
-    faces = faceData.detectMultiScale(img)
         
     if selected_mask == "None":
         return frame
     else:
+        img = frame.to_ndarray(format="bgr24")
+        faces = faceData.detectMultiScale(img)
         mask = masks[selected_mask]
 
         for (x, y, w, h) in faces:
@@ -91,12 +91,6 @@ def video_frame_callback(frame):
 faceData = cv2.CascadeClassifier(
     cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 )
-
-## CONSTANTS -----
-
-last_mask = ""
-choosen_mask = ""
-
 
 # #Loading vader_mask asset
 masks = {
