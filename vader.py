@@ -113,7 +113,7 @@ webrtc_streamer(
         "audio": False
     },
     rtc_configuration={ 
-        "iceServers": [{"urls": ["stun:stun3.l.google.com:19302"]}]
+        "iceServers": [{"urls": ["stun:stun.gmx.net:3478"]}]
     },
     video_frame_callback=video_frame_callback
     )
