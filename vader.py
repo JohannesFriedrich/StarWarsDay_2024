@@ -58,36 +58,35 @@ def video_frame_callback(frame):
         
     if selected_mask == "None":
         return frame
+    else:
+        mask = masks[selected_mask]
 
-    mask = masks[selected_mask]
+        for (x, y, w, h) in faces:
+            # cv2.rectangle(img, (x,y),(x+w,y+h), (255,0,0))
+            # resize mask to a new var called small_mask
+            small_mask = cv2.resize(mask, (int(mask_scale_factor*w), int(mask_scale_factor*h)))
+            add_transparent_image(
+                img, 
+                small_mask, 
+                max(0, x-int(abs(mask_scale_factor-1)/2*w)), 
+                max(0, y-int(abs(mask_scale_factor-1)/2*h))
+            )
+        if x_wing:
+            add_transparent_image(
+                img, 
+                masks["x_wing"]
+            )
+        if millenium_falcon:
+            add_transparent_image(
+                img, 
+                masks["millenium_falcon"]
+            )
 
-    for (x, y, w, h) in faces:
-        # cv2.rectangle(img, (x,y),(x+w,y+h), (255,0,0))
-        # resize mask to a new var called small_mask
-        small_mask = cv2.resize(mask, (int(mask_scale_factor*w), int(mask_scale_factor*h)))
-        add_transparent_image(
-            img, 
-            small_mask, 
-            max(0, x-int(abs(mask_scale_factor-1)/2*w)), 
-            max(0, y-int(abs(mask_scale_factor-1)/2*h))
-        )
-    if x_wing:
-        add_transparent_image(
-            img, 
-            masks["x_wing"]
-        )
-    if millenium_falcon:
-        add_transparent_image(
-            img, 
-            masks["millenium_falcon"]
-        )
-
-
-    # rebuild a VideoFrame, preserving timing information
-    new_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
-    new_frame.pts = frame.pts
-    new_frame.time_base = frame.time_base
-    return new_frame
+        # rebuild a VideoFrame, preserving timing information
+        new_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
+        new_frame.pts = frame.pts
+        new_frame.time_base = frame.time_base
+        return new_frame
 
 faceData = cv2.CascadeClassifier(
     cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
